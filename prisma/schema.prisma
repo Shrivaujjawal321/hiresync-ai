@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Organization {
+  id               String      @id @default(cuid())
+  name             String
+  slug             String      @unique
+  plan             String      @default("free")
+  stripeCustomerId String?
+  createdAt        DateTime    @default(now())
+  users            User[]
+  jobs             Job[]
+  candidates       Candidate[]
+}
+
+model User {
+  id            String         @id @default(cuid())
+  orgId         String
+  org           Organization   @relation(fields: [orgId], references: [id])
+  email         String         @unique
+  password      String
+  name          String
+  role          String         @default("admin")
+  avatarUrl     String?
+  createdAt     DateTime       @default(now())
+  jobs          Job[]
+  notifications Notification[]
+}
+
+model Job {
+  id          String      @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  title       String
+  description String
+  location    String?
+  salaryMin   Int?
+  salaryMax   Int?
+  status      String      @default("draft")
+  createdById String
+  createdBy   User        @relation(fields: [createdById], references: [id])
+  candidates  Candidate[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Candidate {
+  id         String      @id @default(cuid())
+  jobId      String
+  job        Job         @relation(fields: [jobId], references: [id])
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id])
+  name       String
+  email      String
+  phone      String?
+  resumeUrl  String?
+  aiScore    Float?
+  aiSummary  String?
+  stage      String      @default("applied")
+  appliedAt  DateTime    @default(now())
+  interviews Interview[]
+}
+
+model Interview {
+  id          String    @id @default(cuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  scheduledAt DateTime
+  durationMin Int       @default(30)
+  type        String    @default("video")
+  meetingLink String?
+  status      String    @default("scheduled")
+  notes       String?
+  createdAt   DateTime  @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   @default("info")
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
